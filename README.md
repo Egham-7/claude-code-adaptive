@@ -27,7 +27,7 @@ npm install -g @anthropic-ai/claude-code
 Then, install Claude Code Router:
 
 ```shell
-npm install -g @llmadaptive/adaptive-claude-code-router
+npm install -g @adaptive-llm/claude-code-router
 ```
 
 ### 2. Configuration
