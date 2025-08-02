@@ -1,7 +1,5 @@
 # Claude Code Router
 
-[中文版](README_zh.md)
-
 > A Claude Code router powered by Adaptive.
 
 ![](blog/images/claude-code.png)
@@ -50,7 +48,7 @@ Create and configure your `~/.claude-code-router/config.json` file:
 Configuration options:
 
 - **`enabled`**: Whether the router is enabled
-- **`endpoint`**: The OpenAI-compatible API endpoint  
+- **`endpoint`**: The OpenAI-compatible API endpoint
 - **`api_key`**: Your API key for the service
 - **`timeout`**: Request timeout in milliseconds
 - **`HOST`**: Server host address (default: 127.0.0.1)
@@ -82,6 +80,7 @@ This project uses modern development tools for code quality and consistency:
 - **Type Check**: TypeScript type checking (`bun run type-check`)
 
 Available scripts:
+
 ```shell
 bun run build       # Build the project
 bun run format      # Format code with Biome
