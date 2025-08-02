@@ -8,13 +8,14 @@ import type {
   MessageCreateParams,
   Message,
 } from "@anthropic-ai/sdk/resources/messages";
+import type { Config } from "../types/config";
 
 /**
  * Transforms a Claude request into the OpenAI format.
  */
 const transformClaudeToOpenAI = (
   claudeRequest: MessageCreateParams,
-  config: Record<string, any>,
+  config: Config,
 ): ChatCompletionCreateParams => {
   console.log("Claude Request: ", claudeRequest);
   // Transform Claude's /v1/messages format to OpenAI's /v1/chat/completions format
@@ -207,17 +208,17 @@ const transformClaudeToOpenAI = (
     }
   }
 
-  // Add global custom parameters
+  // Add global custom parameters - these will be passed through to the backend
   if (config.protocol_manager_config) {
-    openAIRequest.protocol_manager_config = config.protocol_manager_config;
+    (openAIRequest as any).protocol_manager_config = config.protocol_manager_config;
   }
 
   if (config.semantic_cache) {
-    openAIRequest.semantic_cache = config.semantic_cache;
+    (openAIRequest as any).semantic_cache = config.semantic_cache;
   }
 
   if (config.fallback_mode) {
-    openAIRequest.fallback_mode = config.fallback_mode;
+    (openAIRequest as any).fallback_mode = config.fallback_mode;
   }
 
   return openAIRequest;
@@ -339,46 +340,33 @@ const transformOpenAIToClaude = (openAIResponse: ChatCompletion): Message => {
 
 import { convertOpenAIStreamToAnthropic } from "./streamConverter";
 
-interface AutoRouterConfig {
-  enabled: boolean;
-  apiKey: string;
-  baseURL: string;
-  timeout?: number;
-  global?: Record<string, any>;
-}
-
-interface RouterConfig {
-  AutoRouter: AutoRouterConfig;
-}
+// RouterConfig is now just an alias for the flat Config
+type RouterConfig = Config;
 
 /**
  * Forwards a request to the OpenAI API and sends the response back to the client.
  */
 const forwardToOpenAI = async (req: any, reply: any, config: RouterConfig) => {
   try {
-    const autoRouterConfig = config.AutoRouter;
-    if (!autoRouterConfig || !autoRouterConfig.enabled) {
-      throw new Error("AutoRouter not configured or disabled");
+    if (!config.enabled) {
+      throw new Error("Router not configured or disabled");
     }
 
-    // Use global configuration
-    const globalConfig = autoRouterConfig.global || {};
-
-    // Transform Claude request to OpenAI format with global config
+    // Transform Claude request to OpenAI format
     const claudeRequest = req.body as MessageCreateParams;
-    const openAIRequest = transformClaudeToOpenAI(claudeRequest, globalConfig);
+    const openAIRequest = transformClaudeToOpenAI(claudeRequest, config);
 
-    log("Forwarding request to OpenAI API:", autoRouterConfig.baseURL);
+    log("Forwarding request to OpenAI API:", config.endpoint);
 
     // Initialize OpenAI client
     const openai = new OpenAI({
-      apiKey: autoRouterConfig.apiKey,
-      baseURL: autoRouterConfig.baseURL,
+      apiKey: config.api_key,
+      baseURL: config.endpoint,
       defaultHeaders: {
-        Authorization: `Bearer ${autoRouterConfig.apiKey}`,
-        "X-API-Key": autoRouterConfig.apiKey,
-        "api-key": autoRouterConfig.apiKey,
-        "X-Stainless-API-Key": autoRouterConfig.apiKey,
+        Authorization: `Bearer ${config.api_key}`,
+        "X-API-Key": config.api_key,
+        "api-key": config.api_key,
+        "X-Stainless-API-Key": config.api_key,
       },
     });
 

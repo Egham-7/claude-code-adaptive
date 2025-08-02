@@ -92,6 +92,12 @@ class StreamState implements StreamConverterState {
   isClosed = false;
   readonly toolCalls = new Map<number, ToolCallInfo>();
   readonly toolCallIndexToContentBlockIndex = new Map<number, number>();
+  
+  // For reasoning extraction
+  contentBuffer = "";
+  thinkingBuffer = "";
+  isInsideThinking = false;
+  hasThinkingContent = false;
 
   constructor(messageId?: string, model = "unknown") {
     this.messageId = messageId || `msg_${Date.now()}`;
@@ -170,12 +176,13 @@ async function processOpenAIChunk(
   state.totalChunks++;
   log("Processing chunk:", JSON.stringify(chunk, null, 2));
 
-  if (chunk.error) {
+  // Handle any parsing errors or malformed chunks
+  if (!chunk.choices && !chunk.model && !chunk.id) {
     controller.enqueueEvent("error", {
       type: "error",
       message: {
         type: "api_error",
-        message: JSON.stringify(chunk.error),
+        message: "Invalid chunk format",
       },
     });
     return;
@@ -207,20 +214,16 @@ async function processOpenAIChunk(
   const choice = chunk.choices?.[0];
   if (!choice) return;
 
-  // Handle thinking content
-  if (choice.delta?.thinking && !controller.closed && !state.hasFinished) {
-    await handleThinkingContent(choice.delta.thinking, state, controller);
-  }
+  // Note: 'thinking' is not part of standard OpenAI API
+  // Removed thinking content handling as it's not supported by OpenAI ChatCompletionChunk
 
-  // Handle regular content
+  // Handle regular content with reasoning extraction
   if (choice.delta?.content && !controller.closed && !state.hasFinished) {
-    await handleTextContent(choice.delta.content, state, controller);
+    await handleTextContentWithReasoning(choice.delta.content, state, controller);
   }
 
-  // Handle annotations (web search results)
-  if (choice.delta?.annotations?.length && !controller.closed && !state.hasFinished) {
-    await handleAnnotations(choice.delta.annotations, state, controller);
-  }
+  // Note: 'annotations' is not part of standard OpenAI API
+  // Removed annotations handling as it's not supported by OpenAI ChatCompletionChunk
 
   // Handle tool calls
   if (choice.delta?.tool_calls && !controller.closed && !state.hasFinished) {
@@ -274,13 +277,77 @@ async function handleThinkingContent(
   }
 }
 
-async function handleTextContent(
+async function handleTextContentWithReasoning(
   content: string,
   state: StreamState,
   controller: TypeSafeStreamController
 ): Promise<void> {
   state.contentChunks++;
+  state.contentBuffer += content;
 
+  // Extract reasoning from XML tags
+  const { thinking, regular } = extractReasoningFromContent(state.contentBuffer);
+  
+  // Handle thinking content if found
+  if (thinking && !state.hasThinkingContent) {
+    await handleExtractedThinking(thinking, state, controller);
+  }
+
+  // Handle regular content
+  if (regular) {
+    await handleRegularTextContent(regular, state, controller);
+    // Update buffer to remove processed content
+    state.contentBuffer = state.contentBuffer.replace(regular, "");
+  }
+}
+
+async function handleExtractedThinking(
+  thinkingContent: string,
+  state: StreamState,
+  controller: TypeSafeStreamController
+): Promise<void> {
+  if (!state.isThinkingStarted) {
+    // Close any existing text content block
+    if (state.hasTextContentStarted) {
+      controller.enqueueEvent("content_block_stop", {
+        type: "content_block_stop",
+        index: state.contentIndex,
+      });
+      state.contentIndex++;
+    }
+
+    controller.enqueueEvent("content_block_start", {
+      type: "content_block_start",
+      index: state.contentIndex,
+      content_block: { type: "thinking", thinking: "" },
+    });
+    state.isThinkingStarted = true;
+    state.hasThinkingContent = true;
+  }
+
+  controller.enqueueEvent("content_block_delta", {
+    type: "content_block_delta",
+    index: state.contentIndex,
+    delta: {
+      type: "thinking_delta",
+      thinking: thinkingContent,
+    },
+  });
+
+  // Close thinking block
+  controller.enqueueEvent("content_block_stop", {
+    type: "content_block_stop",
+    index: state.contentIndex,
+  });
+  state.contentIndex++;
+  state.isThinkingStarted = false;
+}
+
+async function handleRegularTextContent(
+  content: string,
+  state: StreamState,
+  controller: TypeSafeStreamController
+): Promise<void> {
   if (!state.hasTextContentStarted && !state.hasFinished) {
     state.hasTextContentStarted = true;
     controller.enqueueEvent("content_block_start", {
@@ -303,6 +370,31 @@ async function handleTextContent(
       },
     });
   }
+}
+
+function extractReasoningFromContent(content: string): { thinking: string | null; regular: string } {
+  // Look for thinking/reasoning tags
+  const thinkingPatterns = [
+    /<thinking>([\s\S]*?)<\/thinking>/g,
+    /<reasoning>([\s\S]*?)<\/reasoning>/g,
+    /<thoughts>([\s\S]*?)<\/thoughts>/g
+  ];
+
+  let thinking: string | null = null;
+  let regular = content;
+
+  for (const pattern of thinkingPatterns) {
+    const matches = Array.from(content.matchAll(pattern));
+    if (matches.length > 0) {
+      // Extract thinking content from the first complete match
+      thinking = matches[0][1].trim();
+      // Remove the thinking tags from regular content
+      regular = content.replace(pattern, '').trim();
+      break;
+    }
+  }
+
+  return { thinking, regular };
 }
 
 async function handleAnnotations(

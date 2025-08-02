@@ -6,8 +6,8 @@
     "ccr": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsup",
-    "build:watch": "tsup --watch",
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
     "dev": "bun run build:watch",
     "type-check": "tsc --noEmit",
     "changeset": "changeset",
@@ -40,7 +40,7 @@
     "@types/node": "^24.0.15",
     "esbuild": "^0.25.1",
     "shx": "^0.4.0",
-    "tsup": "^8.5.0",
+    "tsdown": "^0.13.2",
     "typescript": "^5.8.2"
   }
 }

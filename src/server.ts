@@ -2,8 +2,9 @@ import Fastify, { FastifyInstance } from "fastify";
 import { readConfigFile, writeConfigFile } from "./utils";
 import { join } from "path";
 import fastifyStatic from "@fastify/static";
+import type { Config } from "./types/config";
 
-export const createServer = (config: any): FastifyInstance => {
+export const createServer = (config: Config): FastifyInstance => {
   const server = Fastify({ logger: true });
 
   // Add endpoint to read config.json
@@ -13,7 +14,7 @@ export const createServer = (config: any): FastifyInstance => {
 
   // Add endpoint to save config.json
   server.post("/api/config", async (req) => {
-    const newConfig = req.body;
+    const newConfig = req.body as Config;
 
     // Backup existing config file if it exists
     const { backupConfigFile } = await import("./utils");

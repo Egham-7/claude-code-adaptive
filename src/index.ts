@@ -48,10 +48,8 @@ async function run(options: RunOptions = {}) {
   const config = await initConfig();
   let HOST = config.HOST;
 
-  if (config.HOST && !config.APIKEY) {
-    HOST = "127.0.0.1";
-    console.warn("⚠️ API key is not set. HOST is forced to 127.0.0.1.");
-  }
+  // Always use localhost for security
+  HOST = "127.0.0.1";
 
   const port = config.PORT || 3456;
 

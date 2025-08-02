@@ -5,18 +5,17 @@ import {
 } from "./processCheck";
 import { closeService } from "./close";
 import { readConfigFile } from ".";
+import type { Config } from "../types/config";
 
 export async function executeCodeCommand(args: string[] = []) {
   // Set environment variables
-  const config = await readConfigFile();
+  const config: Config = await readConfigFile();
   const env: Record<string, string> = {
     ...process.env,
     ANTHROPIC_AUTH_TOKEN: "test",
-    ANTHROPIC_BASE_URL: `http://127.0.0.1:${config.PORT || 3456}`,
-    API_TIMEOUT_MS: String(config.API_TIMEOUT_MS ?? 600000), // Default to 10 minutes if not set
+    ANTHROPIC_BASE_URL: `http://127.0.0.1:${config.PORT}`,
+    API_TIMEOUT_MS: String(config.API_TIMEOUT_MS),
   };
-
-  // No longer using APIKEY for local authentication
 
   // Increment reference count when command starts
   incrementReferenceCount();

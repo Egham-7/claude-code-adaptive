@@ -18,6 +18,12 @@ export interface StreamConverterState {
   isClosed: boolean;
   readonly toolCalls: Map<number, ToolCallInfo>;
   readonly toolCallIndexToContentBlockIndex: Map<number, number>;
+  
+  // For reasoning extraction
+  contentBuffer: string;
+  thinkingBuffer: string;
+  isInsideThinking: boolean;
+  hasThinkingContent: boolean;
 }
 
 export interface ToolCallInfo {
