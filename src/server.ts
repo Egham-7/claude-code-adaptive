@@ -1,8 +1,6 @@
 import Fastify, { FastifyInstance } from "fastify";
 import { readConfigFile, writeConfigFile } from "./utils";
-import { CONFIG_FILE } from "./constants";
 import { join } from "path";
-import { readFileSync } from "fs";
 import fastifyStatic from "@fastify/static";
 
 export const createServer = (config: any): FastifyInstance => {
@@ -16,14 +14,14 @@ export const createServer = (config: any): FastifyInstance => {
   // Add endpoint to save config.json
   server.post("/api/config", async (req) => {
     const newConfig = req.body;
-    
+
     // Backup existing config file if it exists
     const { backupConfigFile } = await import("./utils");
     const backupPath = await backupConfigFile();
     if (backupPath) {
       console.log(`Backed up existing configuration file to ${backupPath}`);
     }
-    
+
     await writeConfigFile(newConfig);
     return { success: true, message: "Config saved successfully" };
   });

@@ -167,18 +167,18 @@ const validateAutoRouterConfig = (config: any) => {
     return { valid: false, error: "AutoRouter configuration missing" };
   }
   
-  const { enabled, endpoint, api_key } = config.AutoRouter;
-  
-  if (enabled && !endpoint) {
-    return { valid: false, error: "AutoRouter endpoint is required when enabled" };
+  const { enabled, baseURL, apiKey } = config.AutoRouter;
+
+  if (enabled && !baseURL) {
+    return { valid: false, error: "AutoRouter baseURL is required when enabled" };
   }
   
-  if (enabled && !api_key) {
-    return { valid: false, error: "AutoRouter API key is required when enabled" };
+  if (enabled && !apiKey) {
+    return { valid: false, error: "AutoRouter apiKey is required when enabled" };
   }
   
-  if (enabled && endpoint && !endpoint.startsWith('http')) {
-    return { valid: false, error: "AutoRouter endpoint must be a valid HTTP(S) URL" };
+  if (enabled && baseURL && !baseURL.startsWith('http')) {
+    return { valid: false, error: "AutoRouter baseURL must be a valid HTTP(S) URL" };
   }
   
   return { valid: true };
