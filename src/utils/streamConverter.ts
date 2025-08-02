@@ -506,9 +506,11 @@ async function handleToolCalls(
 					},
 				});
 			} catch (_error: any) {
-				// Fallback for malformed JSON
+				// Fallback for malformed JSON - remove control characters
+				// biome-ignore lint/suspicious/noControlCharactersInRegex: Intentionally removing control characters from malformed JSON
+				const controlCharPattern = /[\u0000-\u001F\u007F-\u009F]/g;
 				const fixedArgument = toolCall.function.arguments
-					.replace(/[\x00-\x1F\x7F-\x9F]/g, "")
+					.replace(controlCharPattern, "")
 					.replace(/\\/g, "\\\\")
 					.replace(/"/g, '\\"');
 
