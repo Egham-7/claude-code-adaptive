@@ -1,25 +1,24 @@
 {
-  "AutoRouter": {
-    "enabled": true,
-    "endpoint": "https://llmadaptive.uk/api/v1/chat/completions",
-    "api_key": "sk-soGt2uNyDGwjfuJMGEnElpOzRTddX8Uj9w6BjrdXI6x1spvt",
-    "timeout": 30000,
-    "global": {
-      "protocol_manager_config": {
-        "cost_bias": 0.5,
-        "complexity_threshold": 0.7,
-        "token_threshold": 4000
-      },
-      "semantic_cache": {
-        "enabled": true,
-        "ttl": 3600
-      },
-      "fallback_mode": "sequential"
-    }
-  },
-  "APIKEY": "sk-soGt2uNyDGwjfuJMGEnElpOzRTddX8Uj9w6BjrdXI6x1spvt",
-  "HOST": "0.0.0.0",
-  "PORT": 3456,
-  "API_TIMEOUT_MS": 600000
+	"AutoRouter": {
+		"enabled": true,
+		"endpoint": "https://llmadaptive.uk/api/v1/chat/completions",
+		"api_key": "sk-soGt2uNyDGwjfuJMGEnElpOzRTddX8Uj9w6BjrdXI6x1spvt",
+		"timeout": 30000,
+		"global": {
+			"protocol_manager_config": {
+				"cost_bias": 0.5,
+				"complexity_threshold": 0.7,
+				"token_threshold": 4000
+			},
+			"semantic_cache": {
+				"enabled": true,
+				"ttl": 3600
+			},
+			"fallback_mode": "sequential"
+		}
+	},
+	"APIKEY": "sk-soGt2uNyDGwjfuJMGEnElpOzRTddX8Uj9w6BjrdXI6x1spvt",
+	"HOST": "0.0.0.0",
+	"PORT": 3456,
+	"API_TIMEOUT_MS": 600000
 }
-

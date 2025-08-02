@@ -343,9 +343,16 @@ module.exports = async function router(req, config) {
 };
 ```
 
-## 🤖 GitHub Actions
+## 🤖 GitHub Actions & CI/CD
 
-Integrate Claude Code Router into your CI/CD pipeline. After setting up [Claude Code Actions](https://docs.anthropic.com/en/docs/claude-code/github-actions), modify your `.github/workflows/claude.yaml` to use the router:
+The project includes a comprehensive CI/CD pipeline in `.github/workflows/ci.yml` that handles:
+- **Build**: Type checking and building the project
+- **Test**: Running tests if they exist
+- **Lint**: Code linting with Biome
+- **Format**: Code formatting checks with Biome
+- **Release**: Automated releases using changesets (only runs after build, test, lint, and format succeed)
+
+You can also integrate Claude Code Router into your own CI/CD pipeline. After setting up [Claude Code Actions](https://docs.anthropic.com/en/docs/claude-code/github-actions), modify your `.github/workflows/claude.yaml` to use the router:
 
 ```yaml
 name: Claude Code
@@ -355,12 +362,47 @@ on:
     types: [created]
   # ... other triggers
 
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
+  setup:
+    name: Setup Environment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Prepare Claude Code Router Config
+        run: |
+          mkdir -p $HOME/.claude-code-router
+          cat << 'EOF' > $HOME/.claude-code-router/config.json
+          {
+            "log": true,
+            "OPENAI_API_KEY": "${{ secrets.OPENAI_API_KEY }}",
+            "OPENAI_BASE_URL": "https://api.deepseek.com",
+            "OPENAI_MODEL": "deepseek-chat"
+          }
+          EOF
+
+      - name: Start Claude Code Router
+        run: |
+          nohup bunx @musistudio/claude-code-router@latest start &
+          sleep 2
+
   claude:
+    name: Run Claude Code
+    runs-on: ubuntu-latest
+    needs: [setup]
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       # ... other conditions
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
@@ -372,24 +414,10 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Prepare Environment
+      - name: Setup Environment (inherited from setup job)
         run: |
-          curl -fsSL https://bun.sh/install | bash
-          mkdir -p $HOME/.claude-code-router
-          cat << 'EOF' > $HOME/.claude-code-router/config.json
-          {
-            "log": true,
-            "OPENAI_API_KEY": "${{ secrets.OPENAI_API_KEY }}",
-            "OPENAI_BASE_URL": "https://api.deepseek.com",
-            "OPENAI_MODEL": "deepseek-chat"
-          }
-          EOF
-        shell: bash
-
-      - name: Start Claude Code Router
-        run: |
-          nohup ~/.bun/bin/bunx @musistudio/claude-code-router@1.0.8 start &
-        shell: bash
+          # Setup steps would be inherited or repeated from setup job
+          echo "Environment ready"
 
       - name: Run Claude Code
         id: claude

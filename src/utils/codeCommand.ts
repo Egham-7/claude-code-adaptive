@@ -1,45 +1,40 @@
-import { spawn } from "child_process";
-import {
-  incrementReferenceCount,
-  decrementReferenceCount,
-} from "./processCheck";
-import { closeService } from "./close";
-import { readConfigFile } from ".";
+import { spawn } from "node:child_process";
 import type { Config } from "../types/config";
+import { readConfigFile } from ".";
+import { closeService } from "./close";
+import { decrementReferenceCount, incrementReferenceCount } from "./processCheck";
 
 export async function executeCodeCommand(args: string[] = []) {
-  // Set environment variables
-  const config: Config = await readConfigFile();
-  const env: Record<string, string> = {
-    ...process.env,
-    ANTHROPIC_AUTH_TOKEN: "test",
-    ANTHROPIC_BASE_URL: `http://127.0.0.1:${config.PORT}`,
-    API_TIMEOUT_MS: String(config.API_TIMEOUT_MS),
-  };
+	// Set environment variables
+	const config: Config = await readConfigFile();
+	const env: Record<string, string> = {
+		...process.env,
+		ANTHROPIC_AUTH_TOKEN: "test",
+		ANTHROPIC_BASE_URL: `http://127.0.0.1:${config.PORT}`,
+		API_TIMEOUT_MS: String(config.API_TIMEOUT_MS),
+	};
 
-  // Increment reference count when command starts
-  incrementReferenceCount();
+	// Increment reference count when command starts
+	incrementReferenceCount();
 
-  // Execute claude command
-  const claudePath = process.env.CLAUDE_PATH || "claude";
-  const claudeProcess = spawn(claudePath, args, {
-    env,
-    stdio: "inherit",
-    shell: true,
-  });
+	// Execute claude command
+	const claudePath = process.env.CLAUDE_PATH || "claude";
+	const claudeProcess = spawn(claudePath, args, {
+		env,
+		stdio: "inherit",
+		shell: true,
+	});
 
-  claudeProcess.on("error", (error) => {
-    console.error("Failed to start claude command:", error.message);
-    console.log(
-      "Make sure Claude Code is installed: npm install -g @anthropic-ai/claude-code"
-    );
-    decrementReferenceCount();
-    process.exit(1);
-  });
+	claudeProcess.on("error", (error) => {
+		console.error("Failed to start claude command:", error.message);
+		console.log("Make sure Claude Code is installed: npm install -g @anthropic-ai/claude-code");
+		decrementReferenceCount();
+		process.exit(1);
+	});
 
-  claudeProcess.on("close", (code) => {
-    decrementReferenceCount();
-    closeService();
-    process.exit(code || 0);
-  });
+	claudeProcess.on("close", (code) => {
+		decrementReferenceCount();
+		closeService();
+		process.exit(code || 0);
+	});
 }

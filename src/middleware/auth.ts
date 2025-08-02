@@ -1,8 +1,7 @@
-import { FastifyRequest, FastifyReply } from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 
 export const apiKeyAuth =
-  (config: any) =>
-  (req: FastifyRequest, reply: FastifyReply, done: () => void) => {
-    // Skip authentication - allow all requests
-    done();
-  };
+	(_config: any) => (_req: FastifyRequest, _reply: FastifyReply, done: () => void) => {
+		// Skip authentication - allow all requests
+		done();
+	};

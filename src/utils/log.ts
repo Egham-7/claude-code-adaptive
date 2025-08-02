@@ -6,28 +6,24 @@ const LOG_FILE = path.join(HOME_DIR, "claude-code-router.log");
 
 // Ensure log directory exists
 if (!fs.existsSync(HOME_DIR)) {
-  fs.mkdirSync(HOME_DIR, { recursive: true });
+	fs.mkdirSync(HOME_DIR, { recursive: true });
 }
 
 export function log(...args: any[]) {
-  // Check if logging is enabled via environment variable
-  const isLogEnabled = process.env.LOG === "true";
+	// Check if logging is enabled via environment variable
+	const isLogEnabled = process.env.LOG === "true";
 
-  if (!isLogEnabled) {
-    return;
-  }
+	if (!isLogEnabled) {
+		return;
+	}
 
-  const timestamp = new Date().toISOString();
-  const logMessage = `[${timestamp}] ${
-    Array.isArray(args)
-      ? args
-          .map((arg) =>
-            typeof arg === "object" ? JSON.stringify(arg) : String(arg)
-          )
-          .join(" ")
-      : ""
-  }\n`;
+	const timestamp = new Date().toISOString();
+	const logMessage = `[${timestamp}] ${
+		Array.isArray(args)
+			? args.map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : String(arg))).join(" ")
+			: ""
+	}\n`;
 
-  // Append to log file
-  fs.appendFileSync(LOG_FILE, logMessage, "utf8");
+	// Append to log file
+	fs.appendFileSync(LOG_FILE, logMessage, "utf8");
 }

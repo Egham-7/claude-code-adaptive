@@ -1,46 +1,53 @@
 {
-  "name": "@llmadaptive/adaptive-claude-code-router",
-  "version": "1.0.31",
-  "description": "Use Claude Code without an Anthropics account and route it to another LLM provider",
-  "bin": {
-    "ccr": "./dist/cli.js"
-  },
-  "scripts": {
-    "build": "tsdown",
-    "build:watch": "tsdown --watch",
-    "dev": "bun run build:watch",
-    "type-check": "tsc --noEmit",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "bun run build && changeset publish"
-  },
-  "keywords": [
-    "claude",
-    "code",
-    "router",
-    "llm",
-    "anthropic"
-  ],
-  "author": "musistudio",
-  "license": "MIT",
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.57.0",
-    "@fastify/static": "^8.2.0",
-    "dotenv": "^16.4.7",
-    "fastify": "^5.4.0",
-    "json5": "^2.2.3",
-    "openai": "^5.11.0",
-    "openurl": "^1.1.1",
-    "tiktoken": "^1.0.21",
-    "uuid": "^11.1.0"
-  },
-  "devDependencies": {
-    "@changesets/changelog-github": "^0.5.1",
-    "@changesets/cli": "^2.29.5",
-    "@types/node": "^24.0.15",
-    "esbuild": "^0.25.1",
-    "shx": "^0.4.0",
-    "tsdown": "^0.13.2",
-    "typescript": "^5.8.2"
-  }
+	"name": "@llmadaptive/adaptive-claude-code-router",
+	"version": "1.0.31",
+	"description": "Use Claude Code without an Anthropics account and route it to another LLM provider",
+	"bin": {
+		"ccr": "./dist/cli.js"
+	},
+	"scripts": {
+		"build": "tsdown",
+		"build:watch": "tsdown --watch",
+		"dev": "bun run build:watch",
+		"type-check": "tsc --noEmit",
+		"format": "biome format --write .",
+		"format:check": "biome format .",
+		"lint": "biome lint .",
+		"lint:fix": "biome lint --write .",
+		"check": "biome check .",
+		"check:fix": "biome check --write .",
+		"changeset": "changeset",
+		"version-packages": "changeset version",
+		"release": "bun run build && changeset publish"
+	},
+	"keywords": [
+		"claude",
+		"code",
+		"router",
+		"llm",
+		"anthropic"
+	],
+	"author": "musistudio",
+	"license": "MIT",
+	"dependencies": {
+		"@anthropic-ai/sdk": "^0.57.0",
+		"@fastify/static": "^8.2.0",
+		"dotenv": "^17.2.1",
+		"fastify": "^5.4.0",
+		"json5": "^2.2.3",
+		"openai": "^5.11.0",
+		"openurl": "^1.1.1",
+		"tiktoken": "^1.0.21",
+		"uuid": "^11.1.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.1.3",
+		"@changesets/changelog-github": "^0.5.1",
+		"@changesets/cli": "^2.29.5",
+		"@types/node": "^24.1.0",
+		"esbuild": "^0.25.8",
+		"shx": "^0.4.0",
+		"tsdown": "^0.13.2",
+		"typescript": "^5.9.2"
+	}
 }
