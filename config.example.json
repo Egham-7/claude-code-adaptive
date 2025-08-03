@@ -1,7 +1,8 @@
 {
 	"enabled": true,
 	"baseURL": "https://llmadaptive.uk/api/v1",
-	"api_key": "your-api-key-here",
+	"endpoint": "chat/completions",
+	"api_key": "your-adaptive-api-key-here",
 	"timeout": 30000,
 	"HOST": "127.0.0.1",
 	"PORT": 3456,
