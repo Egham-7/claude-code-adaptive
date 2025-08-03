@@ -7,7 +7,6 @@ export default defineConfig({
 	},
 	format: ["cjs", "esm"],
 	dts: true,
-	splitting: false,
 	sourcemap: true,
 	clean: true,
 	outDir: "dist",
@@ -27,6 +26,4 @@ export default defineConfig({
 		"tiktoken",
 		"uuid",
 	],
-	// Exclude UI and other non-library directories
-	ignoreWatch: ["ui/**", "llms/**", "blog/**", "screenshots/**", "dist/**", "node_modules/**"],
 });

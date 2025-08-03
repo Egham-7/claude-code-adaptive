@@ -31,6 +31,9 @@
 	],
 	"author": "musistudio",
 	"license": "MIT",
+	"engines": {
+		"node": ">=18.0.0"
+	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.57.0",
 		"@fastify/static": "^8.2.0",
