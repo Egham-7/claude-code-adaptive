@@ -1,5 +1,11 @@
 # @adaptive-llm/claude-code-router
 
+## 0.2.2
+
+### Patch Changes
+
+- [`d79c43f`](https://github.com/Egham-7/claude-code-adaptive/commit/d79c43fff0acb501a6fc0419fbc6893ef6561c73) Thanks [@botirk38](https://github.com/botirk38)! - chore: update docs to reflect changes
+
 ## 0.2.1
 
 ### Patch Changes
