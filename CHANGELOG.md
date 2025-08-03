@@ -1,5 +1,11 @@
 # @adaptive-llm/claude-code-router
 
+## 0.2.0
+
+### Minor Changes
+
+- [`b403c21`](https://github.com/Egham-7/claude-code-adaptive/commit/b403c21309c9339f5161df9d765e8ee27d18ac81) Thanks [@botirk38](https://github.com/botirk38)! - feat: add cli improvements using prompter lib
+
 ## 0.1.2
 
 ### Patch Changes
