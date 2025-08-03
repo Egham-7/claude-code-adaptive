@@ -1,6 +1,6 @@
 {
 	"name": "@adaptive-llm/claude-code-router",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"type": "module",
 	"description": "Use Claude Code without an Anthropics account and route it to another LLM provider",
 	"bin": {
