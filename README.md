@@ -74,7 +74,7 @@ ccr code
 
 This project uses modern development tools for code quality and consistency:
 
-- **Build**: TypeScript compilation with `tsdown`
+- **Build**: TypeScript compilation with `tsdown` (esbuild-based)
 - **Format**: Code formatting with Biome (`bun run format`)
 - **Lint**: Code linting with Biome (`bun run lint`)
 - **Type Check**: TypeScript type checking (`bun run type-check`)
@@ -82,8 +82,29 @@ This project uses modern development tools for code quality and consistency:
 Available scripts:
 
 ```shell
-bun run build       # Build the project
-bun run format      # Format code with Biome
-bun run lint        # Lint code with Biome
-bun run type-check  # Run TypeScript type checking
+bun run build         # Build the project
+bun run build:watch   # Build with watch mode
+bun run dev           # Development mode (build:watch)
+bun run format        # Format code with Biome
+bun run format:check  # Check code formatting
+bun run lint          # Lint code with Biome
+bun run lint:fix      # Fix linting issues automatically
+bun run check         # Run both format and lint checks
+bun run check:fix     # Fix both format and lint issues
+bun run type-check    # Run TypeScript type checking
 ```
+
+### Code Quality Tools
+
+The project uses **Biome** for unified formatting and linting, providing:
+- Fast TypeScript/JavaScript formatting
+- ESLint-compatible linting rules
+- Node.js protocol imports enforcement
+- Consistent code style across the project
+
+### Build System
+
+Built with **tsdown** (esbuild-based) for:
+- Fast TypeScript compilation
+- ESM and CommonJS output formats
+- Optimized bundling for CLI distribution

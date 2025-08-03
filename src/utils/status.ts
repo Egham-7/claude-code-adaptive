@@ -10,7 +10,7 @@ export async function showStatus() {
 		console.log("✅ Status: Running");
 		console.log(`🆔 Process ID: ${info.pid}`);
 		console.log(`🌐 Port: ${info.port}`);
-		console.log(`📡 API Endpoint: ${info.endpoint}`);
+		console.log(`📡 API Endpoint: ${info.baseURL}`);
 		console.log(`📄 PID File: ${info.pidFile}`);
 		console.log("");
 		console.log("🚀 Ready to use! Run the following commands:");

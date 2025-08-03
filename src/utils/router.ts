@@ -327,12 +327,15 @@ const forwardToOpenAI = async (req: any, reply: any, config: RouterConfig) => {
 		const claudeRequest = req.body as MessageCreateParams;
 		const openAIRequest = transformClaudeToOpenAI(claudeRequest, config);
 
-		log("Forwarding request to OpenAI API:", config.endpoint);
+		const endpoint = config.endpoint || "chat/completions";
+		const fullURL = `${config.baseURL}/${endpoint}`;
+
+		log("Forwarding request to OpenAI API:", fullURL);
 
 		// Initialize OpenAI client
 		const openai = new OpenAI({
 			apiKey: config.api_key,
-			baseURL: config.endpoint,
+			baseURL: config.baseURL,
 			defaultHeaders: {
 				Authorization: `Bearer ${config.api_key}`,
 				"X-API-Key": config.api_key,

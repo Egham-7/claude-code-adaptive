@@ -2,8 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import JSON5 from "json5";
+import { z } from "zod";
 import { CONFIG_FILE, HOME_DIR, PLUGINS_DIR } from "../constants";
 import type { Config } from "../types/config";
+import { ConfigSchema } from "../types/config";
 
 const ensureDir = async (dir_path: string) => {
 	try {
@@ -44,8 +46,19 @@ export const readConfigFile = async (): Promise<Config> => {
 	try {
 		const configData = await fs.readFile(CONFIG_FILE, "utf-8");
 		try {
-			return JSON5.parse(configData) as Config;
+			const rawConfig = JSON5.parse(configData);
+			// Validate and parse with Zod
+			const config = ConfigSchema.parse(rawConfig);
+			return config;
 		} catch (parseError) {
+			if (parseError instanceof z.ZodError) {
+				console.error(`Invalid configuration in ${CONFIG_FILE}:`);
+				parseError.issues.forEach((err) => {
+					console.error(`  ${err.path.join(".")}: ${err.message}`);
+				});
+				console.error("Please fix the configuration errors above.");
+				process.exit(1);
+			}
 			console.error(`Failed to parse config file at ${CONFIG_FILE}`);
 			console.error("Error details:", (parseError as Error).message);
 			console.error("Please check your config file syntax.");
@@ -56,15 +69,18 @@ export const readConfigFile = async (): Promise<Config> => {
 			// Config file doesn't exist, prompt user for initial setup
 			console.log("\n🚀 Welcome to Claude Code Router! Let's set up your configuration.");
 
-			const endpoint = await question("Enter OpenAI-compatible API endpoint: ");
+			const baseURL = await question(
+				"Enter OpenAI-compatible API base URL (default: https://llmadaptive.uk/api/v1): "
+			);
 			const apiKey = await question("Enter API key: ");
 
 			const config: Config = {
 				enabled: true,
-				endpoint: endpoint,
+				baseURL: baseURL || "https://llmadaptive.uk/api/v1",
+				endpoint: "chat/completions",
 				api_key: apiKey,
 				timeout: 30000,
-				HOST: "0.0.0.0",
+				HOST: "127.0.0.1",
 				PORT: 3456,
 				API_TIMEOUT_MS: 600000,
 			};
@@ -129,20 +145,19 @@ export const writeConfigFile = async (config: Config) => {
 	await fs.writeFile(CONFIG_FILE, configJson);
 };
 
-const validateConfig = (config: Config) => {
-	if (config.enabled && !config.endpoint) {
-		return { valid: false, error: "endpoint is required when enabled" };
+const validateConfig = (config: unknown) => {
+	try {
+		ConfigSchema.parse(config);
+		return { valid: true };
+	} catch (error) {
+		if (error instanceof z.ZodError) {
+			const errorMessages = error.issues
+				.map((err) => `${err.path.join(".")}: ${err.message}`)
+				.join(", ");
+			return { valid: false, error: errorMessages };
+		}
+		return { valid: false, error: "Invalid configuration format" };
 	}
-
-	if (config.enabled && !config.api_key) {
-		return { valid: false, error: "api_key is required when enabled" };
-	}
-
-	if (config.enabled && config.endpoint && !config.endpoint.startsWith("http")) {
-		return { valid: false, error: "endpoint must be a valid HTTP(S) URL" };
-	}
-
-	return { valid: true };
 };
 
 export const initConfig = async (): Promise<Config> => {

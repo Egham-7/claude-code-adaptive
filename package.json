@@ -1,6 +1,7 @@
 {
 	"name": "@adaptive-llm/claude-code-router",
 	"version": "0.1.2",
+	"type": "module",
 	"description": "Use Claude Code without an Anthropics account and route it to another LLM provider",
 	"bin": {
 		"ccr": "./dist/cli.js"
@@ -14,6 +15,7 @@
 		"format:check": "biome format .",
 		"lint": "biome lint .",
 		"lint:fix": "biome lint --write .",
+		"lint:unsafe": "biome lint --write --unsafe .",
 		"check": "biome check .",
 		"check:fix": "biome check --write .",
 		"changeset": "changeset",
@@ -32,13 +34,19 @@
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.57.0",
 		"@fastify/static": "^8.2.0",
+		"@inquirer/prompts": "^7.8.0",
+		"commander": "^14.0.0",
 		"dotenv": "^17.2.1",
+		"execa": "^9.6.0",
 		"fastify": "^5.4.0",
 		"json5": "^2.2.3",
 		"openai": "^5.11.0",
 		"openurl": "^1.1.1",
+		"ora": "^8.2.0",
+		"picocolors": "^1.1.1",
 		"tiktoken": "^1.0.21",
-		"uuid": "^11.1.0"
+		"uuid": "^11.1.0",
+		"zod": "^4.0.14"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.1.3",

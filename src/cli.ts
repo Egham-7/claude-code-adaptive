@@ -1,266 +1,143 @@
 #!/usr/bin/env node
-import { exec, spawn } from "node:child_process";
-import fs, { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { Command } from "commander";
+import pc from "picocolors";
 import { version } from "../package.json";
-import { PID_FILE, REFERENCE_COUNT_FILE } from "./constants";
-import { run } from "./index";
-import { executeCodeCommand } from "./utils/codeCommand";
-import { cleanupPidFile, getServiceInfo, isServiceRunning } from "./utils/processCheck";
-import { showStatus } from "./utils/status";
+import { executeCode } from "./commands/code.js";
+import { configCommand } from "./commands/config.js";
+import { initConfig } from "./commands/init.js";
+import { showLogs } from "./commands/logs.js";
+import { restartServer } from "./commands/restart.js";
+import { startServer } from "./commands/start.js";
+import { showStatus } from "./commands/status.js";
+import { stopServer } from "./commands/stop.js";
+import { testConnection } from "./commands/test.js";
 
-const command = process.argv[2];
+const program = new Command();
 
-const HELP_TEXT = `
-Usage: ccr [command]
+program
+	.name("ccr")
+	.description("Claude Code Router - Route Claude Code requests to any LLM provider")
+	.version(version, "-v, --version", "Show version information")
+	.configureHelp({
+		sortSubcommands: true,
+		showGlobalOptions: true,
+	});
 
-Commands:
-  start         Start server 
-  stop          Stop server
-  restart       Restart server
-  status        Show server status
-  code          Execute claude command
-  ui            Open the web UI in browser
-  -v, version   Show version information
-  -h, help      Show help information
+// Init command - Interactive setup wizard
+program
+	.command("init")
+	.description("Initialize configuration with interactive setup")
+	.option("-f, --force", "Overwrite existing configuration")
+	.action(initConfig);
 
-Example:
-  ccr start
-  ccr code "Write a Hello World"
-  ccr ui
-`;
+// Start command
+program
+	.command("start")
+	.description("Start the router server")
+	.option("-d, --daemon", "Run in daemon mode")
+	.option("-p, --port <port>", "Override port number")
+	.action(startServer);
 
-async function waitForService(timeout = 10000, initialDelay = 1000): Promise<boolean> {
-	// Wait for an initial period to let the service initialize
-	await new Promise((resolve) => setTimeout(resolve, initialDelay));
+// Stop command
+program.command("stop").description("Stop the router server").action(stopServer);
 
-	const startTime = Date.now();
-	while (Date.now() - startTime < timeout) {
-		if (isServiceRunning()) {
-			// Wait for an additional short period to ensure service is fully ready
-			await new Promise((resolve) => setTimeout(resolve, 500));
-			return true;
-		}
-		await new Promise((resolve) => setTimeout(resolve, 100));
+// Restart command
+program.command("restart").description("Restart the router server").action(restartServer);
+
+// Status command
+program
+	.command("status")
+	.description("Show server status and configuration")
+	.option("-j, --json", "Output in JSON format")
+	.action(showStatus);
+
+// Code command - Execute Claude Code through router
+program
+	.command("code")
+	.description("Execute Claude Code through the router")
+	.argument("[prompt...]", "The prompt to send to Claude Code")
+	.option("-m, --model <model>", "Override model selection")
+	.option("-t, --timeout <ms>", "Request timeout in milliseconds")
+	.action(executeCode);
+
+// Config command - Manage configuration
+program
+	.command("config")
+	.description("Manage configuration settings")
+	.option("-s, --show", "Show current configuration")
+	.option("-e, --edit", "Edit configuration file")
+	.option("-v, --validate", "Validate configuration")
+	.option("-r, --reset", "Reset to default configuration")
+	.action(configCommand);
+
+// Test command - Test connection and configuration
+program
+	.command("test")
+	.description("Test connection to configured LLM provider")
+	.option("-v, --verbose", "Show detailed test information")
+	.action(testConnection);
+
+// Logs command - Show server logs
+program
+	.command("logs")
+	.description("Show server logs")
+	.option("-f, --follow", "Follow log output")
+	.option("-n, --lines <count>", "Number of lines to show", "50")
+	.action(showLogs);
+
+// Global error handler
+program.exitOverride((err) => {
+	if (err.code === "commander.version") {
+		console.log(`${pc.cyan("Claude Code Router")} v${version}`);
+		process.exit(0);
 	}
-	return false;
-}
 
+	if (err.code === "commander.helpDisplayed") {
+		process.exit(0);
+	}
+
+	console.error(pc.red(`Error: ${err.message}`));
+	process.exit(1);
+});
+
+// Custom help
+program.addHelpText(
+	"after",
+	`
+${pc.cyan("Examples:")}
+  ${pc.gray("$")} ccr init                    ${pc.dim("# Interactive setup wizard")}
+  ${pc.gray("$")} ccr start                   ${pc.dim("# Start the router server")}
+  ${pc.gray("$")} ccr code "Hello world"      ${pc.dim("# Send prompt through router")}
+  ${pc.gray("$")} ccr status --json           ${pc.dim("# Show status in JSON format")}
+  ${pc.gray("$")} ccr test --verbose          ${pc.dim("# Test connection with details")}
+
+${pc.cyan("Documentation:")}
+  ${pc.blue("https://github.com/Egham-7/claude-code-adaptive")}
+`
+);
+
+// Parse command line arguments
 async function main() {
-	switch (command) {
-		case "start":
-			run();
-			break;
-		case "stop":
-			try {
-				const pid = parseInt(readFileSync(PID_FILE, "utf-8"));
-				process.kill(pid);
-				cleanupPidFile();
-				if (existsSync(REFERENCE_COUNT_FILE)) {
-					try {
-						fs.unlinkSync(REFERENCE_COUNT_FILE);
-					} catch (_e) {
-						// Ignore cleanup errors
-					}
-				}
-				console.log("claude code router service has been successfully stopped.");
-			} catch (_e) {
-				console.log("Failed to stop the service. It may have already been stopped.");
-				cleanupPidFile();
-			}
-			break;
-		case "status":
-			await showStatus();
-			break;
-		case "code":
-			if (!isServiceRunning()) {
-				console.log("Service not running, starting service...");
-				const cliPath = join(__dirname, "cli.js");
-				const startProcess = spawn("node", [cliPath, "start"], {
-					detached: true,
-					stdio: "ignore",
-				});
-
-				// let errorMessage = "";
-				// startProcess.stderr?.on("data", (data) => {
-				//   errorMessage += data.toString();
-				// });
-
-				startProcess.on("error", (error) => {
-					console.error("Failed to start service:", error.message);
-					process.exit(1);
-				});
-
-				// startProcess.on("close", (code) => {
-				//   if (code !== 0 && errorMessage) {
-				//     console.error("Failed to start service:", errorMessage.trim());
-				//     process.exit(1);
-				//   }
-				// });
-
-				startProcess.unref();
-
-				if (await waitForService()) {
-					executeCodeCommand(process.argv.slice(3));
-				} else {
-					console.error(
-						"Service startup timeout, please manually run `ccr start` to start the service"
-					);
-					process.exit(1);
-				}
-			} else {
-				executeCodeCommand(process.argv.slice(3));
-			}
-			break;
-		case "ui": {
-			// Check if service is running
-			if (!isServiceRunning()) {
-				console.log("Service not running, starting service...");
-				const cliPath = join(__dirname, "cli.js");
-				const startProcess = spawn("node", [cliPath, "start"], {
-					detached: true,
-					stdio: "ignore",
-				});
-
-				startProcess.on("error", (error) => {
-					console.error("Failed to start service:", error.message);
-					process.exit(1);
-				});
-
-				startProcess.unref();
-
-				if (!(await waitForService())) {
-					// If service startup fails, try to start with default config
-					console.log("Service startup timeout, trying to start with default configuration...");
-					const { initDir, writeConfigFile, backupConfigFile } = require("./utils");
-
-					try {
-						// Initialize directories
-						await initDir();
-
-						// Backup existing config file if it exists
-						const backupPath = await backupConfigFile();
-						if (backupPath) {
-							console.log(`Backed up existing configuration file to ${backupPath}`);
-						}
-
-						// Create a minimal default config file
-						await writeConfigFile({
-							PORT: 3456,
-							Providers: [],
-							Router: {},
-						});
-						console.log(
-							"Created minimal default configuration file at ~/.claude-code-router/config.json"
-						);
-						console.log("Please edit this file with your actual configuration.");
-
-						// Try starting the service again
-						const restartProcess = spawn("node", [cliPath, "start"], {
-							detached: true,
-							stdio: "ignore",
-						});
-
-						restartProcess.on("error", (error) => {
-							console.error("Failed to start service with default config:", error.message);
-							process.exit(1);
-						});
-
-						restartProcess.unref();
-
-						if (!(await waitForService(15000))) {
-							// Wait a bit longer for the first start
-							console.error(
-								"Service startup still failing. Please manually run `ccr start` to start the service and check the logs."
-							);
-							process.exit(1);
-						}
-					} catch (error: any) {
-						console.error("Failed to create default configuration:", error.message);
-						process.exit(1);
-					}
-				}
-			}
-
-			// Get service info and open UI
-			const serviceInfo = await getServiceInfo();
-			const uiUrl = `${serviceInfo.endpoint}/ui/`;
-			console.log(`Opening UI at ${uiUrl}`);
-
-			// Open URL in browser based on platform
-			const platform = process.platform;
-			let openCommand = "";
-
-			if (platform === "win32") {
-				// Windows
-				openCommand = `start ${uiUrl}`;
-			} else if (platform === "darwin") {
-				// macOS
-				openCommand = `open ${uiUrl}`;
-			} else if (platform === "linux") {
-				// Linux
-				openCommand = `xdg-open ${uiUrl}`;
-			} else {
-				console.error("Unsupported platform for opening browser");
-				process.exit(1);
-			}
-
-			exec(openCommand, (error) => {
-				if (error) {
-					console.error("Failed to open browser:", error.message);
-					process.exit(1);
-				}
-			});
-			break;
-		}
-		case "-v":
-		case "version":
-			console.log(`claude-code-router version: ${version}`);
-			break;
-		case "restart": {
-			// Stop the service if it's running
-			try {
-				const pid = parseInt(readFileSync(PID_FILE, "utf-8"));
-				process.kill(pid);
-				cleanupPidFile();
-				if (existsSync(REFERENCE_COUNT_FILE)) {
-					try {
-						fs.unlinkSync(REFERENCE_COUNT_FILE);
-					} catch (_e) {
-						// Ignore cleanup errors
-					}
-				}
-				console.log("claude code router service has been stopped.");
-			} catch (_e) {
-				console.log("Service was not running or failed to stop.");
-				cleanupPidFile();
-			}
-
-			// Start the service again in the background
-			console.log("Starting claude code router service...");
-			const cliPath = join(__dirname, "cli.js");
-			const startProcess = spawn("node", [cliPath, "start"], {
-				detached: true,
-				stdio: "ignore",
-			});
-
-			startProcess.on("error", (error) => {
-				console.error("Failed to start service:", error);
-				process.exit(1);
-			});
-
-			startProcess.unref();
-			console.log("✅ Service started successfully in the background.");
-			break;
-		}
-		case "-h":
-		case "help":
-			console.log(HELP_TEXT);
-			break;
-		default:
-			console.log(HELP_TEXT);
+	try {
+		await program.parseAsync(process.argv);
+	} catch (error) {
+		if (error instanceof Error) {
+			console.error(pc.red(`Fatal error: ${error.message}`));
 			process.exit(1);
+		}
+		throw error;
 	}
 }
+
+// Handle unhandled rejections
+process.on("unhandledRejection", (reason, promise) => {
+	console.error(pc.red("Unhandled Rejection at:"), promise, pc.red("reason:"), reason);
+	process.exit(1);
+});
+
+process.on("uncaughtException", (error) => {
+	console.error(pc.red("Uncaught Exception:"), error);
+	process.exit(1);
+});
 
 main().catch(console.error);

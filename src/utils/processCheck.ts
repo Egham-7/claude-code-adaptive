@@ -81,7 +81,7 @@ export async function getServiceInfo() {
 		running,
 		pid,
 		port,
-		endpoint: `http://127.0.0.1:${port}`,
+		baseURL: `http://127.0.0.1:${port}`,
 		pidFile: PID_FILE,
 		referenceCount: getReferenceCount(),
 	};

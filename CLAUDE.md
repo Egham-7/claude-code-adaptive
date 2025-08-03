@@ -6,7 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 -   **Build the project**:
     ```bash
-    npm run build
+    bun run build
+    ```
+-   **Format code**:
+    ```bash
+    bun run format
+    ```
+-   **Lint code**:
+    ```bash
+    bun run lint
+    ```
+-   **Fix linting issues**:
+    ```bash
+    bun run lint:fix
+    ```
+-   **Type check**:
+    ```bash
+    bun run type-check
     ```
 -   **Start the router server**:
     ```bash
@@ -26,7 +42,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     ```
 -   **Release a new version**:
     ```bash
-    npm run release
+    bun run release
     ```
 
 ## Architecture
@@ -65,7 +81,8 @@ This project is a TypeScript-based router for Claude Code requests. It allows ro
 - `src/types/` - All TypeScript type definitions
 
 ### **Build and Packaging**
-- `tsup.config.ts` - Build configuration using tsup (esbuild)
+- `tsdown.config.ts` - Build configuration using tsdown (esbuild-based)
+- `biome.json` - Code formatting and linting configuration
 - `package.json` - Project dependencies and scripts
 - `.changeset/` - Version management configuration
 
@@ -89,28 +106,48 @@ Complex multi-provider routing with custom rules:
 
 -   **TypeScript**: Use strict TypeScript with proper type definitions
 -   **ES Modules**: Use ES module syntax (`import`/`export`), not CommonJS (`require`)
+-   **Node.js Imports**: Use `node:` protocol for built-in modules (`import fs from "node:fs"`)
 -   **Destructuring**: Destructure imports when possible (`import { foo } from 'bar'`)
 -   **Async/Await**: Prefer `async`/`await` over promise chains
 -   **Error Handling**: Use proper error handling with try/catch blocks
 -   **Type Safety**: Always use proper types, especially for stream processing
 -   **Comments**: Add JSDoc comments for public functions and complex logic
+-   **Formatting**: Use Biome for consistent code formatting (`bun run format`)
+-   **Linting**: Follow Biome linting rules (`bun run lint`)
 
 ## Development Workflow
 
 ### **Type Checking**
 ```bash
 # Always run type check after making changes
-npm run type-check
-# OR
 bun run type-check
+```
+
+### **Code Quality**
+```bash
+# Format code
+bun run format
+
+# Lint code
+bun run lint
+
+# Fix linting issues automatically
+bun run lint:fix
+
+# Run both format and lint checks
+bun run check
+
+# Fix both format and lint issues
+bun run check:fix
 ```
 
 ### **Development Process**
 1. **Make changes** to source files in `src/`
-2. **Build the project** with `npm run build`
-3. **Test locally** with `ccr start` and `ccr code "test prompt"`
-4. **Run type check** to ensure no TypeScript errors
-5. **Commit changes** with descriptive commit messages
+2. **Format and lint** with `bun run check:fix`
+3. **Build the project** with `bun run build`
+4. **Test locally** with `ccr start` and `ccr code "test prompt"`
+5. **Run type check** to ensure no TypeScript errors
+6. **Commit changes** with descriptive commit messages
 
 ### **Testing the Router**
 ```bash
@@ -177,10 +214,11 @@ ANTHROPIC_AUTH_TOKEN=test
 ## Build System and Dependencies
 
 ### **Build Process**
-- **Bundler**: tsup (esbuild-based) for fast builds
+- **Bundler**: tsdown (esbuild-based) for fast builds
 - **Output**: Both CommonJS and ESM formats
 - **External Dependencies**: AI SDKs and server dependencies preserved
 - **Target**: Node.js 18+
+- **Code Quality**: Biome for formatting and linting
 
 ### **Key Dependencies**
 - `fastify` - HTTP server framework
@@ -191,7 +229,8 @@ ANTHROPIC_AUTH_TOKEN=test
 
 ### **Development Dependencies**
 - `typescript` - TypeScript compiler
-- `tsup` - Build tool
+- `tsdown` - Build tool (esbuild-based)
+- `@biomejs/biome` - Code formatting and linting
 - `@changesets/cli` - Version management
 
 ## Claude Code Integration
@@ -234,17 +273,18 @@ ANTHROPIC_AUTH_TOKEN=test
 ### **Version Management**
 ```bash
 # Create a changeset for your changes
-npx changeset
+bun changeset
 
 # Build and release
-npm run release
+bun run release
 ```
 
 ### **Changesets Workflow**
 1. Make your changes
-2. Run `npx changeset` to document changes
-3. Commit changeset files
-4. Release process automatically generates changelog and bumps version
+2. Format and lint with `bun run check:fix`
+3. Run `bun changeset` to document changes
+4. Commit changeset files
+5. Release process automatically generates changelog and bumps version
 
 ## Docker Support
 
@@ -285,11 +325,12 @@ Always use consistent package manager within a session.
 
 ### **Essential Commands**
 ```bash
-ccr start          # Start router service
-ccr code "prompt"  # Run Claude Code through router  
-ccr stop           # Stop service
-npm run type-check # Verify TypeScript
-npm run build      # Build project
+ccr start            # Start router service
+ccr code "prompt"    # Run Claude Code through router  
+ccr stop             # Stop service
+bun run type-check   # Verify TypeScript
+bun run build        # Build project
+bun run check:fix    # Format and lint code
 ```
 
 ### **Key Files to Know**
@@ -297,11 +338,13 @@ npm run build      # Build project
 - `src/utils/router.ts` - Core routing logic
 - `src/cli.ts` - CLI command handling
 - `config.example.json` - Configuration reference
-- `tsup.config.ts` - Build configuration
+- `tsdown.config.ts` - Build configuration
+- `biome.json` - Code quality configuration
 
 ### **When Things Break**
-1. Check TypeScript with `npm run type-check`
-2. Verify configuration with `ccr status`
-3. Check logs at `~/.claude-code-router/claude-code-router.log`
-4. Reset config by deleting `~/.claude-code-router/config.json`
-5. Test with simple `ccr code "hello"` after restart
+1. Check TypeScript with `bun run type-check`
+2. Format and lint with `bun run check:fix`
+3. Verify configuration with `ccr status`
+4. Check logs at `~/.claude-code-router/claude-code-router.log`
+5. Reset config by deleting `~/.claude-code-router/config.json`
+6. Test with simple `ccr code "hello"` after restart
